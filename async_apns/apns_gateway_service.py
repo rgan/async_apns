@@ -1,13 +1,17 @@
+import os
 import socket
 import struct
 from tornado import ioloop
 from tornado import iostream
 import binascii
+import time
 
 class ApnsGatewayService(object):
 
+    KEY_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "push_key.pem")
+    CERT_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "pushcert.pem")
+
     def close_callback(self):
-        ioloop.IOLoop.instance().stop()
         self.callback()
 
     def send_data(self):
@@ -32,7 +36,7 @@ class ApnsGatewayService(object):
         self.payload = payload
         self.callback = callback
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-        self.stream = iostream.SSLIOStream(s, ssl_options={ "keyfile" : "push_key.pem", "certfile" : "pushcert.pem"})
+        self.stream = iostream.SSLIOStream(s, ssl_options={ "keyfile" : self.KEY_FILE,
+                                                            "certfile" : self.CERT_FILE})
         self.stream.set_close_callback(self.close_callback)
         self.stream.connect(self.host_port(), self.send_data)
-        ioloop.IOLoop.instance().start()
